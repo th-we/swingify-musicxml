@@ -2,9 +2,9 @@ function throwError(message: string, element: Element): never {
   const measure = element.closest("measure");
   const measureInfo = !measure
     ? ""
-    : ` in part ${measure.parentElement?.getAttribute(
-        "id"
-      )} measure ${measure.getAttribute("number")}`;
+    : ` in part ${measure.parentElement?.getAttribute("id")} measure ${
+        measure.getAttribute("number") || ""
+      }`;
   throw new Error(message + measureInfo);
 }
 
@@ -14,6 +14,10 @@ function throwError(message: string, element: Element): never {
  * element by tripling its value because in the output, we triple all the values
  * so the integer math still works with ternary rhythms. The returned value is
  * however the original value as read from the <divisions> element.
+ *
+ * @param oldDivisions  Divisions value that was used in the preceding measure.
+ * Unless this measure has a <division> element of its own, the old divisions
+ * value remains active and will be returned.
  */
 function updateDivisions(measure: Element, oldDivisions?: number) {
   const divisionsElement = measure.querySelector("attributes > divisions");
@@ -44,9 +48,8 @@ function parseIntOrThrow(element: Element) {
 }
 
 /**
- * Makes sure that <duration> and <division> values are suitable for creating
- * ternary rhyhtms. Also makes sure that there are no unsupported elements
- * present.
+ * Makes sure that there are no unsupported elements present (namely <backup>
+ * and <forward>).  Will throw an error otherwise.d
  */
 function checkMeasure(measure: Element) {
   for (const unsupportedElement of measure.querySelectorAll(

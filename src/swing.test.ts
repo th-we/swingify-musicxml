@@ -21,7 +21,7 @@ function swingDocument(measures: string): [Document, () => string] {
 
 test("quarter triplets", () => {
   const [document] = swingDocument(`
-    <measure>
+    <measure number="1">
       <attributes>
         <divisions>12</divisions>
       </attributes>
@@ -58,7 +58,7 @@ test("quarter triplets", () => {
 
 test("sixteenth on offbeat", () => {
   const [document] = swingDocument(`
-    <measure>
+    <measure number="1">
       <attributes>
         <divisions>4</divisions>
       </attributes>
@@ -105,7 +105,7 @@ test("sixteenth on offbeat", () => {
 
 test("sixteenth on downbeat", () => {
   const [document] = swingDocument(`
-    <measure>
+    <measure number="1">
       <attributes>
         <divisions>4</divisions>
       </attributes>
