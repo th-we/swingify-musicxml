@@ -2,7 +2,16 @@ import { JSDOM } from "jsdom";
 import swing from "./swing";
 
 function swingDocument(measures: string): [Document, () => string] {
-  const dom = new JSDOM(
+  const dom = domFromMeasures(measures);
+
+  return [
+    swing(dom.window.document),
+    () => new dom.window.XMLSerializer().serializeToString(dom.window.document),
+  ];
+}
+
+function domFromMeasures(measures: string) {
+  return new JSDOM(
     `
       <score-partwise>
         <part id="P1">
@@ -12,11 +21,6 @@ function swingDocument(measures: string): [Document, () => string] {
     `,
     { contentType: "application/xml" }
   );
-
-  return [
-    swing(dom.window.document),
-    () => new dom.window.XMLSerializer().serializeToString(dom.window.document),
-  ];
 }
 
 test("quarter triplets", () => {
@@ -232,4 +236,18 @@ test("multiples of quarters", () => {
       .map((e) => e.textContent)
       .join(" ")
   ).toBe("3 6 9");
+});
+
+test("error when no division are defined", () => {
+  const xml = `
+    <measure number="1">
+      <note>
+        <duration>1</duration>
+      </note>
+    </measure>
+  `;
+
+  expect(() => swing(domFromMeasures(xml).window.document)).toThrow(
+    "No divisions defined"
+  );
 });
