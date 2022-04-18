@@ -56,6 +56,32 @@ test("quarter triplets", () => {
   ).toBe("36 24 12 24 24 24");
 });
 
+test("eighth triplets", () => {
+  const [document] = swingDocument(`
+    <measure number="1">
+      <attributes>
+        <divisions>3</divisions>
+      </attributes>
+
+      <note>
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+    </measure>
+  `);
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("3 3 3");
+});
+
 test("sixteenth on offbeat", () => {
   const [document] = swingDocument(`
     <measure number="1">
