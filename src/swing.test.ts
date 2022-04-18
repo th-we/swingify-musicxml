@@ -181,3 +181,29 @@ test("syncopation", () => {
       .join(" ")
   ).toBe("4 6 2 4 2");
 });
+
+test("multiples of quarters", () => {
+  const [document] = swingDocument(`
+    <measure number="1">
+      <attributes>
+        <divisions>1</divisions>
+      </attributes>
+
+      <note>
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>2</duration>
+      </note>
+      <note>
+        <duration>3</duration>
+      </note>
+    </measure>
+  `);
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("3 6 9");
+});
