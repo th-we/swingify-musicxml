@@ -65,13 +65,13 @@ function checkMeasure(measure: Element) {
 export default function swing(document: Document) {
   for (const part of document.querySelectorAll("score-partwise > part")) {
     let divisions = undefined;
-    let makeBeatSwing = true;
     for (const measure of part.querySelectorAll("measure")) {
       checkMeasure(measure);
       divisions = updateDivisions(measure, divisions);
 
       let oldPosition = 0;
       let newPosition = 0;
+      let makeBeatSwing = true;
 
       for (const note of measure.querySelectorAll("note")) {
         const durationElement = note.querySelector("duration");
@@ -89,10 +89,21 @@ export default function swing(document: Document) {
           makeBeatSwing = oldDuration === divisions / 2;
         }
 
-        let newDuration = oldDuration * 3;
-        if (makeBeatSwing) {
-          newDuration = oldDuration * (onDownbeat ? 4 : 2);
+        let newDuration;
+
+        if (!makeBeatSwing || oldDuration % divisions === 0) {
+          // We basically keep the original duration if we have a non-swinging
+          // or if the note is a multiple of a quarter note (including
+          // syncopation).
+          newDuration = oldDuration * 3;
+        } else if (onDownbeat) {
+          // Lengthen on downbeat
+          newDuration = oldDuration * 4;
+        } else {
+          // Shorten all other durations
+          newDuration = oldDuration * 2;
         }
+
         durationElement.textContent = newDuration.toString();
 
         if (!note.querySelector("chord")) {
@@ -102,7 +113,12 @@ export default function swing(document: Document) {
       }
 
       if (oldPosition * 3 !== newPosition) {
-        throwError("Modified durations don't add up properly", measure);
+        throwError(
+          `Faulty processing: Modified durations don't add up properly (expected duration sum ${
+            oldPosition * 3
+          }, found ${newPosition})`,
+          measure
+        );
       }
     }
   }

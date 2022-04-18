@@ -148,3 +148,36 @@ test("sixteenth on downbeat", () => {
       .join(" ")
   ).toBe("3 3 3 3 3 6 3 8 4");
 });
+
+test("syncopation", () => {
+  const [document] = swingDocument(`
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+      </attributes>
+
+      <note>
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>2</duration>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+
+      <note>
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+    </measure>
+  `);
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("4 6 2 4 2");
+});
