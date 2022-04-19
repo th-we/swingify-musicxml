@@ -238,6 +238,36 @@ test("multiples of quarters", () => {
   ).toBe("3 6 9");
 });
 
+test("dotted quarters starting or ending on beat", () => {
+  const [document] = swingDocument(`
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+      </attributes>
+
+      <note>
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>3</duration>
+      </note>
+
+      <note>
+        <duration>3</duration>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+    </measure>
+  `);
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("4 8 10 2");
+});
+
 test("error when no division are defined", () => {
   const xml = `
     <measure number="1">

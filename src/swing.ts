@@ -62,6 +62,56 @@ function checkMeasure(measure: Element) {
   }
 }
 
+/**
+ * Splits up the duration of the note at the beats of the measure with beat
+ * units being of the duration specified by `divisions`.
+ *
+ * @param divisions The unit for a quarter note
+ * @param start The current position in the measure, in `divisions` units
+ * @param duration The duration of the note we want to produce the duration
+ * components for.
+ * @returns An array with three components. Here are some examples. `divisions`
+ * is always assumed to be 8. The diagram uses 0, 1 and 2 to illustrate which
+ * component of the returned array a portion of the duration belongs to.
+ *
+ * ```
+ * start duration   beat/duration diagram               result
+ *                  1       2       3       4
+ *                  |       |       |       |       |
+ *   0     4        2222                                 [ 0  0 4 ]
+ *   4     8            00002222                         [ 4  0 4 ]
+ *  12     2                    11                       [ 0  2 0 ]
+ *  14     2                      00                     [ 2  0 0 ]
+ *  16    12                        111111112222         [ 0  8 4 ]
+ *  28     4                                    0000     [ 4  0 0 ]
+ *   0     8        11111111                             [ 0  8 0 ]
+ *   8     16               1111111111111111             [ 0 16 0 ]
+ *  24     8                                11111111     [ 0  8 0 ]
+ * ```
+ * This means component 0 is only set if the note does not start on a beat and
+ * component 2 is only set if the note does not end on a beat. Component 1
+ * includes everything from the first to the last beat encompassed by the note.
+ */
+function durationComponents(divisions: number, start: number, duration: number): [number, number, number] {
+  const beatToStart = start % divisions;
+
+  let startToBeat = beatToStart === 0 ? 0 : (divisions - beatToStart);
+  if (startToBeat > duration) {
+    startToBeat = 0;
+  }
+
+  let beatToEnd = (start + duration) % divisions;
+  if (beatToEnd > duration) {
+    beatToEnd  = 0;
+  }
+
+  return [
+    startToBeat,
+    duration - startToBeat - beatToEnd,
+    beatToEnd,
+  ];
+}
+
 export default function swing(document: Document) {
   for (const part of document.querySelectorAll("score-partwise > part")) {
     let divisions = undefined;
@@ -71,6 +121,7 @@ export default function swing(document: Document) {
 
       let oldPosition = 0;
       let newPosition = 0;
+
       let makeBeatSwing = true;
 
       for (const note of measure.querySelectorAll("note")) {
@@ -80,29 +131,31 @@ export default function swing(document: Document) {
         }
         const oldDuration = parseIntOrThrow(durationElement);
 
-        const onDownbeat = oldPosition % divisions === 0;
-        if (onDownbeat) {
-          // We only want to make this beat swing if it starts with an eighth
-          // note
-          // TODO: This will skip e.g. dotted quarter notes! Handle them!
-          // TODO: Won't work in groups like 𝅘𝅥𝅮𝅘𝅥𝅮 𝅘𝅥  𝅘𝅥𝅮
-          makeBeatSwing = oldDuration === divisions / 2;
-        }
+        const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
+          divisions,
+          oldPosition,
+          oldDuration
+        );
 
-        let newDuration;
+        // console.log(startToBeat, betweenBeats, beatToEnd, makeBeatSwing);
 
-        if (!makeBeatSwing || oldDuration % divisions === 0) {
-          // We basically keep the original duration if we have a non-swinging
-          // or if the note is a multiple of a quarter note (including
-          // syncopation).
-          newDuration = oldDuration * 3;
-        } else if (onDownbeat) {
-          // Lengthen on downbeat
-          newDuration = oldDuration * 4;
+        let newDuration = startToBeat * (makeBeatSwing ? 2 : 3);
+        if (betweenBeats % divisions === 0) {
+          // the betweenBeats duration component stretches from beat to beat
+          newDuration += betweenBeats * 3;
         } else {
-          // Shorten all other durations
-          newDuration = oldDuration * 2;
+          // the betweenBeats duration component neither starts nor ends on a
+          // beat
+          newDuration += betweenBeats * (makeBeatSwing ? 2 : 3);
         }
+
+        // Check if we're starting a new beat here
+        if (beatToEnd > 0) {
+          // We only want to make this beat swing if it starts with an eighth
+          makeBeatSwing = beatToEnd === divisions / 2;
+        }
+
+        newDuration += beatToEnd * (makeBeatSwing ? 4 : 3);
 
         durationElement.textContent = newDuration.toString();
 
