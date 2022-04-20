@@ -15,11 +15,12 @@ function throwError(message: string, element: Element): never {
  * so the integer math still works with ternary rhythms. The returned value is
  * however the original value as read from the <divisions> element.
  *
- * @param oldDivisions  Divisions value that was used in the preceding measure.
- * Unless this measure has a <division> element of its own, the old divisions
- * value remains active and will be returned.
+ * @param unswingedDivisions  Divisions value that was used in the preceding
+ * measure. Unless this measure has a <division> element of its own, the
+ * previously active (unswinged) divisions as read from the MusicXML remains
+ * active and will be returned.
  */
-function updateDivisions(measure: Element, oldDivisions?: number) {
+function updateDivisions(measure: Element, unswingedDivisions?: number) {
   const divisionsElement = measure.querySelector("attributes > divisions");
 
   if (divisionsElement) {
@@ -28,11 +29,11 @@ function updateDivisions(measure: Element, oldDivisions?: number) {
     return value;
   }
 
-  if (!oldDivisions) {
+  if (!unswingedDivisions) {
     throwError("No divisions defined", measure);
   }
 
-  return oldDivisions;
+  return unswingedDivisions;
 }
 
 function parseIntOrThrow(element: Element) {
@@ -92,69 +93,69 @@ function checkMeasure(measure: Element) {
  * component 2 is only set if the note does not end on a beat. Component 1
  * includes everything from the first to the last beat encompassed by the note.
  */
-function durationComponents(divisions: number, start: number, duration: number): [number, number, number] {
+function durationComponents(
+  divisions: number,
+  start: number,
+  duration: number
+): [number, number, number] {
   const beatToStart = start % divisions;
 
-  let startToBeat = beatToStart === 0 ? 0 : (divisions - beatToStart);
+  let startToBeat = beatToStart === 0 ? 0 : divisions - beatToStart;
   if (startToBeat > duration) {
     startToBeat = 0;
   }
 
   let beatToEnd = (start + duration) % divisions;
   if (beatToEnd > duration) {
-    beatToEnd  = 0;
+    beatToEnd = 0;
   }
 
-  return [
-    startToBeat,
-    duration - startToBeat - beatToEnd,
-    beatToEnd,
-  ];
+  return [startToBeat, duration - startToBeat - beatToEnd, beatToEnd];
 }
 
 function isFollowupChordNote(
   note: Element,
-  oldDuration: number,
-  precedingOldDuration: number
+  unswingedDuration: number,
+  precedingUnswingedDuration: number
 ) {
   if (!note.querySelector("chord")) {
     return false;
   }
 
-  if (oldDuration === precedingOldDuration) {
+  if (unswingedDuration === precedingUnswingedDuration) {
     return true;
   }
 
-  if (!precedingOldDuration) {
+  if (!precedingUnswingedDuration) {
     throwError(`Found chord note without preceding main chord note`, note);
   }
 
   throwError(
-    `Chord notes must all be the same duration, but found durations ${precedingOldDuration} and ${oldDuration}`,
+    `Chord notes must all be the same duration, but found durations ${precedingUnswingedDuration} and ${unswingedDuration}`,
     note
   );
 }
 
-function calcNewDuration(
+function calcSwingedDuration(
   divisions: number,
-  oldPosition: number,
-  oldDuration: number,
+  unswingedPosition: number,
+  unswingedDuration: number,
   makeBeatSwing: boolean
 ) {
   const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
     divisions,
-    oldPosition,
-    oldDuration
+    unswingedPosition,
+    unswingedDuration
   );
 
-  let newDuration = startToBeat * (makeBeatSwing ? 2 : 3);
+  let swingedDuration = startToBeat * (makeBeatSwing ? 2 : 3);
   if (betweenBeats % divisions === 0) {
     // the betweenBeats duration component stretches from beat to beat
-    newDuration += betweenBeats * 3;
+    swingedDuration += betweenBeats * 3;
   } else {
     // the betweenBeats duration component neither starts nor ends on a
     // beat
-    newDuration += betweenBeats * (makeBeatSwing ? 2 : 3);
+    swingedDuration += betweenBeats * (makeBeatSwing ? 2 : 3);
   }
 
   // Check if we're starting a new beat here
@@ -163,9 +164,9 @@ function calcNewDuration(
     makeBeatSwing = beatToEnd === divisions / 2;
   }
 
-  newDuration += beatToEnd * (makeBeatSwing ? 4 : 3);
+  swingedDuration += beatToEnd * (makeBeatSwing ? 4 : 3);
 
-  return [newDuration, makeBeatSwing] as [number, boolean];
+  return [swingedDuration, makeBeatSwing] as [number, boolean];
 }
 
 export default function swing(document: Document) {
@@ -175,43 +176,49 @@ export default function swing(document: Document) {
       checkMeasure(measure);
       divisions = updateDivisions(measure, divisions);
 
-      let oldPosition = 0;
-      let newPosition = 0;
+      let unswingedPosition = 0;
+      let swingedPosition = 0;
 
       let makeBeatSwing = false;
 
-      let precedingOldDuration = 0;
-      let newDuration = 0;
+      let precedingUnswingedDuration = 0;
+      let swingedDuration = 0;
 
       for (const note of measure.querySelectorAll("note")) {
         const durationElement = note.querySelector("duration");
         if (!durationElement) {
           throwError("<duration> element missing on note", note);
         }
-        const oldDuration = parseIntOrThrow(durationElement);
+        const unswingedDuration = parseIntOrThrow(durationElement);
 
-        if (!isFollowupChordNote(note, oldDuration, precedingOldDuration)) {
-          [newDuration, makeBeatSwing] = calcNewDuration(
+        if (
+          !isFollowupChordNote(
+            note,
+            unswingedDuration,
+            precedingUnswingedDuration
+          )
+        ) {
+          [swingedDuration, makeBeatSwing] = calcSwingedDuration(
             divisions,
-            oldPosition,
-            oldDuration,
+            unswingedPosition,
+            unswingedDuration,
             makeBeatSwing
           );
 
-          oldPosition = oldPosition + oldDuration;
-          newPosition = newPosition + newDuration;
+          unswingedPosition = unswingedPosition + unswingedDuration;
+          swingedPosition = swingedPosition + swingedDuration;
 
-          precedingOldDuration = oldDuration;
+          precedingUnswingedDuration = unswingedDuration;
         }
 
-        durationElement.textContent = newDuration.toString();
+        durationElement.textContent = swingedDuration.toString();
       }
 
-      if (oldPosition * 3 !== newPosition) {
+      if (unswingedPosition * 3 !== swingedPosition) {
         throwError(
           `Faulty processing: Modified durations don't add up properly (expected duration sum ${
-            oldPosition * 3
-          }, found ${newPosition})`,
+            unswingedPosition * 3
+          }, found ${swingedPosition})`,
           measure
         );
       }
