@@ -134,6 +134,39 @@ function isFollowupChordNote(
   }
 }
 
+function calcNewDuration(
+  divisions: number,
+  oldPosition: number,
+  oldDuration: number,
+  makeBeatSwing: boolean
+) {
+  const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
+    divisions,
+    oldPosition,
+    oldDuration
+  );
+
+  let newDuration = startToBeat * (makeBeatSwing ? 2 : 3);
+  if (betweenBeats % divisions === 0) {
+    // the betweenBeats duration component stretches from beat to beat
+    newDuration += betweenBeats * 3;
+  } else {
+    // the betweenBeats duration component neither starts nor ends on a
+    // beat
+    newDuration += betweenBeats * (makeBeatSwing ? 2 : 3);
+  }
+
+  // Check if we're starting a new beat here
+  if (beatToEnd > 0) {
+    // We only want to make this beat swing if it starts with an eighth
+    makeBeatSwing = beatToEnd === divisions / 2;
+  }
+
+  newDuration += beatToEnd * (makeBeatSwing ? 4 : 3);
+
+  return [newDuration, makeBeatSwing] as [number, boolean];
+}
+
 export default function swing(document: Document) {
   for (const part of document.querySelectorAll("score-partwise > part")) {
     let divisions = undefined;
@@ -144,7 +177,7 @@ export default function swing(document: Document) {
       let oldPosition = 0;
       let newPosition = 0;
 
-      let makeBeatSwing = true;
+      let makeBeatSwing = false;
 
       let precedingOldDuration = 0;
       let newDuration = 0;
@@ -155,30 +188,14 @@ export default function swing(document: Document) {
           throwError("<duration> element missing on note", note);
         }
         const oldDuration = parseIntOrThrow(durationElement);
+
         if (!isFollowupChordNote(note, oldDuration, precedingOldDuration)) {
-          const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
+          [newDuration, makeBeatSwing] = calcNewDuration(
             divisions,
             oldPosition,
-            oldDuration
+            oldDuration,
+            makeBeatSwing
           );
-
-          newDuration = startToBeat * (makeBeatSwing ? 2 : 3);
-          if (betweenBeats % divisions === 0) {
-            // the betweenBeats duration component stretches from beat to beat
-            newDuration += betweenBeats * 3;
-          } else {
-            // the betweenBeats duration component neither starts nor ends on a
-            // beat
-            newDuration += betweenBeats * (makeBeatSwing ? 2 : 3);
-          }
-
-          // Check if we're starting a new beat here
-          if (beatToEnd > 0) {
-            // We only want to make this beat swing if it starts with an eighth
-            makeBeatSwing = beatToEnd === divisions / 2;
-          }
-
-          newDuration += beatToEnd * (makeBeatSwing ? 4 : 3);
 
           oldPosition = oldPosition + oldDuration;
           newPosition = newPosition + newDuration;
