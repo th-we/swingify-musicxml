@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import swing, { Options } from "./swing";
+import swingify, { Options } from "./swing";
 
 function swingDocument(
   measures: string,
@@ -8,7 +8,7 @@ function swingDocument(
   const dom = domFromMeasures(measures);
 
   return [
-    swing(dom.window.document, options),
+    swingify(dom.window.document, options),
     () => new dom.window.XMLSerializer().serializeToString(dom.window.document),
   ];
 }
@@ -280,7 +280,7 @@ test("error when no division are defined", () => {
     </measure>
   `;
 
-  expect(() => swing(domFromMeasures(xml).window.document)).toThrow(
+  expect(() => swingify(domFromMeasures(xml).window.document)).toThrow(
     "No divisions defined"
   );
 });

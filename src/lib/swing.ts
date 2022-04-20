@@ -198,7 +198,7 @@ function calcSwingedDuration(
   return [swingedDuration, makeBeatSwing] as [number, boolean];
 }
 
-export default function swing(document: Document, options?: Options) {
+export default function swingify(document: Document, options?: Options) {
   for (const part of document.querySelectorAll("score-partwise > part")) {
     let divisions = undefined;
     for (const measure of part.querySelectorAll("measure")) {

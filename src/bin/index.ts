@@ -1,16 +1,13 @@
 const { Command } = require("commander");
 // import Command from "commander";
-import swing, { Options } from "../lib/swing";
+import swinginfy, { Options } from "../lib/swing";
 import fs from "fs";
 import { JSDOM } from "jsdom";
-
-let outputPath;
-let inputPaths;
 
 let options;
 let musicxmlPath = "";
 
-const program = new Command()
+new Command()
   .option(
     "--skipColor <string>",
     "Can be 'any' or a color string like '#ff0000'. Groups of notes will note be swingified if a note(head) on the beat matches this color or is any non-black color when 'any' is used."
@@ -36,5 +33,5 @@ const document = new DOMParser().parseFromString(
   musicxmlString,
   "application/xml"
 );
-swing(document);
+swinginfy(document, options);
 console.log(new XMLSerializer().serializeToString(document));
