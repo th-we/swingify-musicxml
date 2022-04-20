@@ -121,17 +121,18 @@ function isFollowupChordNote(
     return false;
   }
 
-  switch (precedingOldDuration) {
-    case 0:
-      throwError(`Found chord note without preceding main chord note`, note);
-    case oldDuration:
-      return true;
-    default:
-      throwError(
-        `Chord notes must all be the same duration, but found durations ${precedingOldDuration} and ${oldDuration}`,
-        note
-      );
+  if (oldDuration === precedingOldDuration) {
+    return true;
   }
+
+  if (!precedingOldDuration) {
+    throwError(`Found chord note without preceding main chord note`, note);
+  }
+
+  throwError(
+    `Chord notes must all be the same duration, but found durations ${precedingOldDuration} and ${oldDuration}`,
+    note
+  );
 }
 
 function calcNewDuration(
