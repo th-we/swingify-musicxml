@@ -409,7 +409,7 @@ test("skipping with specific color", () => {
         <divisions>2</divisions>
       </attributes>
 
-      <!-- not swingified because first note is marked -->
+      <!-- not swingified because first note in beat is marked -->
       <note color="#FF0000">
         <duration>1</duration>
       </note>
@@ -417,11 +417,12 @@ test("skipping with specific color", () => {
         <duration>1</duration>
       </note>
 
-      <!-- swingified because first note is marked with differing color -->
-      <note color="#00FF##">
+      <!-- swingified because color is not matching 'skipColor' -->
+      <note color="#00FF00">
         <duration>1</duration>
       </note>
-      <note color="#FF0000">
+      <!-- No influence on swingification as it does not start the beat: -->
+      <note color="#ff0000">
         <duration>1</duration>
       </note>
     </measure>
@@ -434,4 +435,30 @@ test("skipping with specific color", () => {
       .map((e) => e.textContent)
       .join(" ")
   ).toBe("3 3 4 2");
+});
+
+test("explicit black color does not lead to skipping", () => {
+  const [document] = swingDocument(
+    `
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+      </attributes>
+
+      <note color="#000000">
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+    </measure>
+  `,
+    { skipColor: "any" }
+  );
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("4 2");
 });

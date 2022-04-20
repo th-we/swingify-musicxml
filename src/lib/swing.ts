@@ -152,7 +152,7 @@ function isMarkedToSkip(note: Element, options?: Options) {
     note.getAttribute("color") ||
     note.querySelector("notehead")?.getAttribute("color");
 
-  if (!noteColor) {
+  if (!noteColor || noteColor === "#000000") {
     return false;
   }
 
