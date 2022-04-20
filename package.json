@@ -9,6 +9,7 @@
     "test": "jest --env=node --colors --coverage test"
   },
   "dependencies": {
+    "commander": "^9.2.0",
     "jsdom": "^19.0.0"
   }
 }
