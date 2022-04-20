@@ -92,6 +92,9 @@ function checkMeasure(measure: Element) {
  *   0     8        11111111                             [ 0  8 0 ]
  *   8     16               1111111111111111             [ 0 16 0 ]
  *  24     8                                11111111     [ 0  8 0 ]
+ *   0     4        2222                                 [ 0  0 4 ]
+ *   4     24           000011111111111111112222         [ 4 16 4 ]
+ *  28     4                                    0000     [ 4  0 0 ]
  * ```
  * This means component 0 is only set if the note does not start on a beat and
  * component 2 is only set if the note does not end on a beat. Component 1
