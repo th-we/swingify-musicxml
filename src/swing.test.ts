@@ -281,3 +281,38 @@ test("error when no division are defined", () => {
     "No divisions defined"
   );
 });
+
+test("chords", () => {
+  const [document] = swingDocument(`
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+      </attributes>
+
+      <note>
+        <duration>1</duration>
+      </note>
+      <note>
+        <chord/>
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>2</duration>
+      </note>
+      <note>
+        <chord/>
+        <duration>2</duration>
+      </note>
+
+      <note>
+        <duration>1</duration>
+      </note>
+    </measure>
+  `);
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("4 4 6 6 2");
+});
