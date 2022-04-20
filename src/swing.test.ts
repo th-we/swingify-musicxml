@@ -316,3 +316,40 @@ test("chords", () => {
       .join(" ")
   ).toBe("4 4 6 6 2");
 });
+
+test("inconsistent chord", () => {
+  expect(() =>
+    swingDocument(`
+      <measure number="1">
+        <attributes>
+          <divisions>2</divisions>
+        </attributes>
+
+        <note>
+          <duration>1</duration>
+        </note>
+        <note>
+          <chord/>
+          <duration>2</duration>
+        </note>
+      </measure>
+    `)
+  ).toThrow(/Chord notes must all be the same duration/);
+});
+
+test("chord without initial note", () => {
+  expect(() =>
+    swingDocument(`
+      <measure number="1">
+        <attributes>
+          <divisions>2</divisions>
+        </attributes>
+
+        <note>
+          <chord/>
+          <duration>2</duration>
+        </note>
+      </measure>
+    `)
+  ).toThrow(/Found chord note without preceding main chord note/);
+});

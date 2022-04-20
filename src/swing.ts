@@ -136,11 +136,19 @@ export default function swing(document: Document) {
         const isFollowupChordNote = note.querySelector("chord");
 
         if (isFollowupChordNote) {
-          if (oldDuration !== precedingOldDuration) {
-            throwError(
-              `Chord notes must all be the same duration, but found durations ${precedingOldDuration} and ${oldDuration}`,
-              measure
-            );
+          switch (precedingOldDuration) {
+            case 0:
+              throwError(
+                `Found chord note without preceding main chord note`,
+                measure
+              );
+            case oldDuration:
+              break;
+            default:
+              throwError(
+                `Chord notes must all be the same duration, but found durations ${precedingOldDuration} and ${oldDuration}`,
+                measure
+              );
           }
         } else {
           const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
