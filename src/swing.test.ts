@@ -1,11 +1,14 @@
 import { JSDOM } from "jsdom";
-import swing from "./swing";
+import swing, { Options } from "./swing";
 
-function swingDocument(measures: string): [Document, () => string] {
+function swingDocument(
+  measures: string,
+  options?: Options
+): [Document, () => string] {
   const dom = domFromMeasures(measures);
 
   return [
-    swing(dom.window.document),
+    swing(dom.window.document, options),
     () => new dom.window.XMLSerializer().serializeToString(dom.window.document),
   ];
 }
@@ -352,4 +355,83 @@ test("chord without initial note", () => {
       </measure>
     `)
   ).toThrow(/Found chord note without preceding main chord note/);
+});
+
+test("skipping with any color", () => {
+  const [document] = swingDocument(
+    `
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+      </attributes>
+
+      <!-- not swingified because first note is marked -->
+      <note color="#FF0000">
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+
+      <!-- swingified because first note is not marked -->
+      <note>
+        <duration>1</duration>
+      </note>
+      <note color="#FF0000">
+        <duration>1</duration>
+      </note>
+
+      <!-- not swingified -->
+      <note>
+        <duration>3</duration>
+        <notehead color="#FF0000">normal</notehead>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+    </measure>
+  `,
+    { skipColor: "any" }
+  );
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("3 3 4 2 9 3");
+});
+
+test("skipping with specific color", () => {
+  const [document] = swingDocument(
+    `
+    <measure number="1">
+      <attributes>
+        <divisions>2</divisions>
+      </attributes>
+
+      <!-- not swingified because first note is marked -->
+      <note color="#FF0000">
+        <duration>1</duration>
+      </note>
+      <note>
+        <duration>1</duration>
+      </note>
+
+      <!-- swingified because first note is marked with differing color -->
+      <note color="#00FF##">
+        <duration>1</duration>
+      </note>
+      <note color="#FF0000">
+        <duration>1</duration>
+      </note>
+    </measure>
+  `,
+    { skipColor: "#ff0000" }
+  );
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("3 3 4 2");
 });

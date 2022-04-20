@@ -1,3 +1,7 @@
+export type Options = {
+  skipColor?: string;
+};
+
 function throwError(message: string, element: Element): never {
   const measure = element.closest("measure");
   const measureInfo = !measure
@@ -136,11 +140,32 @@ function isFollowupChordNote(
   );
 }
 
+function isMarkedToSkip(note: Element, options?: Options) {
+  if (!options?.skipColor) {
+    return false;
+  }
+
+  const noteColor =
+    note.getAttribute("color") ||
+    note.querySelector("notehead")?.getAttribute("color");
+
+  if (!noteColor) {
+    return false;
+  }
+
+  return (
+    options.skipColor === "any" ||
+    noteColor.toLowerCase() === options.skipColor.toLowerCase()
+  );
+}
+
 function calcSwingedDuration(
+  note: Element,
   divisions: number,
   unswingedPosition: number,
   unswingedDuration: number,
-  makeBeatSwing: boolean
+  makeBeatSwing: boolean,
+  options?: Options
 ) {
   const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
     divisions,
@@ -161,7 +186,8 @@ function calcSwingedDuration(
   // Check if we're starting a new beat here
   if (beatToEnd > 0) {
     // We only want to make this beat swing if it starts with an eighth
-    makeBeatSwing = beatToEnd === divisions / 2;
+    makeBeatSwing =
+      !isMarkedToSkip(note, options) && beatToEnd === divisions / 2;
   }
 
   swingedDuration += beatToEnd * (makeBeatSwing ? 4 : 3);
@@ -169,7 +195,7 @@ function calcSwingedDuration(
   return [swingedDuration, makeBeatSwing] as [number, boolean];
 }
 
-export default function swing(document: Document) {
+export default function swing(document: Document, options?: Options) {
   for (const part of document.querySelectorAll("score-partwise > part")) {
     let divisions = undefined;
     for (const measure of part.querySelectorAll("measure")) {
@@ -199,10 +225,12 @@ export default function swing(document: Document) {
           )
         ) {
           [swingedDuration, makeBeatSwing] = calcSwingedDuration(
+            note,
             divisions,
             unswingedPosition,
             unswingedDuration,
-            makeBeatSwing
+            makeBeatSwing,
+            options
           );
 
           unswingedPosition = unswingedPosition + unswingedDuration;
