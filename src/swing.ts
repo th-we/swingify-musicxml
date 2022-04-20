@@ -112,6 +112,28 @@ function durationComponents(divisions: number, start: number, duration: number):
   ];
 }
 
+function isFollowupChordNote(
+  note: Element,
+  oldDuration: number,
+  precedingOldDuration: number
+) {
+  if (!note.querySelector("chord")) {
+    return false;
+  }
+
+  switch (precedingOldDuration) {
+    case 0:
+      throwError(`Found chord note without preceding main chord note`, note);
+    case oldDuration:
+      return true;
+    default:
+      throwError(
+        `Chord notes must all be the same duration, but found durations ${precedingOldDuration} and ${oldDuration}`,
+        note
+      );
+  }
+}
+
 export default function swing(document: Document) {
   for (const part of document.querySelectorAll("score-partwise > part")) {
     let divisions = undefined;
@@ -133,24 +155,7 @@ export default function swing(document: Document) {
           throwError("<duration> element missing on note", note);
         }
         const oldDuration = parseIntOrThrow(durationElement);
-        const isFollowupChordNote = note.querySelector("chord");
-
-        if (isFollowupChordNote) {
-          switch (precedingOldDuration) {
-            case 0:
-              throwError(
-                `Found chord note without preceding main chord note`,
-                measure
-              );
-            case oldDuration:
-              break;
-            default:
-              throwError(
-                `Chord notes must all be the same duration, but found durations ${precedingOldDuration} and ${oldDuration}`,
-                measure
-              );
-          }
-        } else {
+        if (!isFollowupChordNote(note, oldDuration, precedingOldDuration)) {
           const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
             divisions,
             oldPosition,
