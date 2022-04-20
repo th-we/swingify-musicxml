@@ -1,6 +1,6 @@
 const { Command } = require("commander");
 // import Command from "commander";
-import swinginfy, { Options } from "../lib/swing";
+import swinginfy, { Options } from "../lib/swingify";
 import fs from "fs";
 import { JSDOM } from "jsdom";
 

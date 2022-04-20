@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import swingify, { Options } from "./swing";
+import swingify, { Options } from "./swingify";
 
 function swingDocument(
   measures: string,
