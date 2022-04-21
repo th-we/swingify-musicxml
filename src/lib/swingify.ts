@@ -1,8 +1,10 @@
 export type Options = {
   noswingColor?: string;
+  silenceColor?: string;
 };
 
 enum Flag {
+  SILENCE,
   NOSWING,
 }
 
@@ -156,6 +158,8 @@ function flagFromNoteColor(note: Element, options: Options) {
   switch (noteColor) {
     case options.noswingColor:
       return Flag.NOSWING;
+    case options.silenceColor:
+      return Flag.SILENCE;
   }
 }
 
@@ -209,6 +213,7 @@ function normalizeOptions(options?: Options) {
   for (const [option, value] of Object.entries(options)) {
     switch (option) {
       case "noswingColor":
+      case "silenceColor":
         options[option] = value.toUpperCase();
         if (!options[option]!.match(/NONE|#[0-9A-F]{6}/)) {
           throw new Error(
@@ -216,6 +221,12 @@ function normalizeOptions(options?: Options) {
           );
         }
     }
+  }
+
+  if (options.noswingColor === options.silenceColor) {
+    throw new Error(
+      "Options 'noswingColor' and 'silenceColor' must have different values."
+    );
   }
 
   return options;
@@ -269,6 +280,12 @@ export default function swingify(document: Document, options?: Options) {
         }
 
         durationElement.textContent = swingedDuration.toString();
+
+        if (flag === Flag.SILENCE) {
+          const forward = note.ownerDocument.createElement("forward");
+          note.replaceWith(forward);
+          forward.appendChild(durationElement);
+        }
       }
 
       if (unswingedPosition * 3 !== swingedPosition) {

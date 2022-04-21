@@ -476,3 +476,60 @@ test("noswingColor='NONE'", () => {
       .join(" ")
   ).toBe("4 2");
 });
+
+test("default silenceColor", () => {
+  const [document] = swingDocument(
+    `
+      <measure number="1">
+        <attributes>
+          <divisions>2</divisions>
+        </attributes>
+
+        <note color="#0000FF">
+          <duration>1</duration>
+        </note>
+        <note>
+          <duration>1</duration>
+        </note>
+      </measure>
+    `
+  );
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.parentElement?.nodeName)
+      .join(" ")
+  ).toBe("forward note");
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("4 2");
+});
+
+test("custom silenceColor", () => {
+  const [document] = swingDocument(
+    `
+      <measure number="1">
+        <attributes>
+          <divisions>2</divisions>
+        </attributes>
+
+        <note>
+          <duration>1</duration>
+        </note>
+        <note color="#FF00FF">
+          <duration>1</duration>
+        </note>
+      </measure>
+    `,
+    { silenceColor: "#FF00FF" }
+  );
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.parentElement?.nodeName)
+      .join(" ")
+  ).toBe("note forward");
+});
