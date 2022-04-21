@@ -2,6 +2,10 @@ export type Options = {
   noswingColor?: string;
 };
 
+enum Flag {
+  NOSWING,
+}
+
 function throwError(message: string, element: Element): never {
   const measure = element.closest("measure");
   const measureInfo = !measure
@@ -143,26 +147,25 @@ function isFollowupChordNote(
   );
 }
 
-function isMarkedForNoswing(note: Element, options: Options) {
-  if (options.noswingColor === "NONE") {
-    return false;
-  }
-
+function flagFromNoteColor(note: Element, options: Options) {
   const noteColor = (
     note.getAttribute("color") ||
     note.querySelector("notehead")?.getAttribute("color")
   )?.toUpperCase();
 
-  return noteColor === options.noswingColor;
+  switch (noteColor) {
+    case options.noswingColor:
+      return Flag.NOSWING;
+  }
 }
 
 function calcSwingedDuration(
-  note: Element,
   divisions: number,
   unswingedPosition: number,
   unswingedDuration: number,
   makeBeatSwing: boolean,
-  options: Options
+  options: Options,
+  flag?: Flag
 ) {
   const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
     divisions,
@@ -183,8 +186,7 @@ function calcSwingedDuration(
   // Check if we're starting a new beat here
   if (beatToEnd > 0) {
     // We only want to make this beat swing if it starts with an eighth
-    makeBeatSwing =
-      !isMarkedForNoswing(note, options) && beatToEnd === divisions / 2;
+    makeBeatSwing = flag !== Flag.NOSWING && beatToEnd === divisions / 2;
   }
 
   swingedDuration += beatToEnd * (makeBeatSwing ? 4 : 3);
@@ -242,6 +244,7 @@ export default function swingify(document: Document, options?: Options) {
           throwError("<duration> element missing on note", note);
         }
         const unswingedDuration = parseIntOrThrow(durationElement);
+        const flag = flagFromNoteColor(note, options);
 
         if (
           !isFollowupChordNote(
@@ -251,12 +254,12 @@ export default function swingify(document: Document, options?: Options) {
           )
         ) {
           [swingedDuration, makeBeatSwing] = calcSwingedDuration(
-            note,
             divisions,
             unswingedPosition,
             unswingedDuration,
             makeBeatSwing,
-            options
+            options,
+            flag
           );
 
           unswingedPosition = unswingedPosition + unswingedDuration;
