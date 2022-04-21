@@ -357,51 +357,7 @@ test("chord without initial note", () => {
   ).toThrow(/Found chord note without preceding main chord note/);
 });
 
-test("skipping with any color", () => {
-  const [document] = swingDocument(
-    `
-    <measure number="1">
-      <attributes>
-        <divisions>2</divisions>
-      </attributes>
-
-      <!-- not swingified because first note is marked -->
-      <note color="#FF0000">
-        <duration>1</duration>
-      </note>
-      <note>
-        <duration>1</duration>
-      </note>
-
-      <!-- swingified because first note is not marked -->
-      <note>
-        <duration>1</duration>
-      </note>
-      <note color="#FF0000">
-        <duration>1</duration>
-      </note>
-
-      <!-- not swingified -->
-      <note>
-        <duration>3</duration>
-        <notehead color="#FF0000">normal</notehead>
-      </note>
-      <note>
-        <duration>1</duration>
-      </note>
-    </measure>
-  `,
-    { skipColor: "any" }
-  );
-
-  expect(
-    [...document.querySelectorAll("duration")]
-      .map((e) => e.textContent)
-      .join(" ")
-  ).toBe("3 3 4 2 9 3");
-});
-
-test("skipping with specific color", () => {
+test("noswingColor", () => {
   const [document] = swingDocument(
     `
     <measure number="1">
@@ -410,24 +366,24 @@ test("skipping with specific color", () => {
       </attributes>
 
       <!-- not swingified because first note in beat is marked -->
-      <note color="#FF0000">
+      <note color="#FFFF00">
         <duration>1</duration>
       </note>
       <note>
         <duration>1</duration>
       </note>
 
-      <!-- swingified because color is not matching 'skipColor' -->
+      <!-- swingified because color is not matching 'noswingColor' -->
       <note color="#00FF00">
         <duration>1</duration>
       </note>
       <!-- No influence on swingification as it does not start the beat: -->
-      <note color="#ff0000">
+      <note color="#FFFF00">
         <duration>1</duration>
       </note>
     </measure>
   `,
-    { skipColor: "#ff0000" }
+    { noswingColor: "#ffff00" }
   );
 
   expect(
@@ -437,23 +393,81 @@ test("skipping with specific color", () => {
   ).toBe("3 3 4 2");
 });
 
-test("explicit black color does not lead to skipping", () => {
+test("default noswingColor", () => {
   const [document] = swingDocument(
     `
-    <measure number="1">
-      <attributes>
-        <divisions>2</divisions>
-      </attributes>
+      <measure number="1">
+        <attributes>
+          <divisions>2</divisions>
+        </attributes>
 
-      <note color="#000000">
-        <duration>1</duration>
-      </note>
-      <note>
-        <duration>1</duration>
-      </note>
-    </measure>
-  `,
-    { skipColor: "any" }
+        <!-- not swingified because first note in beat is marked -->
+        <note color="#FF0000">
+          <duration>1</duration>
+        </note>
+        <note>
+          <duration>1</duration>
+        </note>
+
+        <note>
+          <duration>1</duration>
+        </note>
+        <note>
+          <duration>1</duration>
+        </note>
+      </measure>
+    `
+  );
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("3 3 4 2");
+});
+
+test("color attributes that don't match `nowswingColor` have no effect on swing", () => {
+  const [document] = swingDocument(
+    `
+      <measure number="1">
+        <attributes>
+          <divisions>2</divisions>
+        </attributes>
+
+        <note color="#000000">
+          <duration>1</duration>
+        </note>
+        <note>
+          <duration>1</duration>
+        </note>
+      </measure>
+    `
+  );
+
+  expect(
+    [...document.querySelectorAll("duration")]
+      .map((e) => e.textContent)
+      .join(" ")
+  ).toBe("4 2");
+});
+
+test("noswingColor='NONE'", () => {
+  const [document] = swingDocument(
+    `
+      <measure number="1">
+        <attributes>
+          <divisions>2</divisions>
+        </attributes>
+
+        <note color="#FF0000">
+          <duration>1</duration>
+        </note>
+        <note>
+          <duration>1</duration>
+        </note>
+      </measure>
+    `,
+    { noswingColor: 'NONE' }
   );
 
   expect(

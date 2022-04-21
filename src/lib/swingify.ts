@@ -1,5 +1,5 @@
 export type Options = {
-  skipColor?: string;
+  noswingColor?: string;
 };
 
 function throwError(message: string, element: Element): never {
@@ -143,23 +143,17 @@ function isFollowupChordNote(
   );
 }
 
-function isMarkedToSkip(note: Element, options?: Options) {
-  if (!options?.skipColor) {
+function isMarkedForNoswing(note: Element, options: Options) {
+  if (options.noswingColor === "NONE") {
     return false;
   }
 
-  const noteColor =
+  const noteColor = (
     note.getAttribute("color") ||
-    note.querySelector("notehead")?.getAttribute("color");
+    note.querySelector("notehead")?.getAttribute("color")
+  )?.toUpperCase();
 
-  if (!noteColor || noteColor === "#000000") {
-    return false;
-  }
-
-  return (
-    options.skipColor === "any" ||
-    noteColor.toLowerCase() === options.skipColor.toLowerCase()
-  );
+  return noteColor === options.noswingColor;
 }
 
 function calcSwingedDuration(
@@ -168,7 +162,7 @@ function calcSwingedDuration(
   unswingedPosition: number,
   unswingedDuration: number,
   makeBeatSwing: boolean,
-  options?: Options
+  options: Options
 ) {
   const [startToBeat, betweenBeats, beatToEnd] = durationComponents(
     divisions,
@@ -190,7 +184,7 @@ function calcSwingedDuration(
   if (beatToEnd > 0) {
     // We only want to make this beat swing if it starts with an eighth
     makeBeatSwing =
-      !isMarkedToSkip(note, options) && beatToEnd === divisions / 2;
+      !isMarkedForNoswing(note, options) && beatToEnd === divisions / 2;
   }
 
   swingedDuration += beatToEnd * (makeBeatSwing ? 4 : 3);
@@ -198,7 +192,36 @@ function calcSwingedDuration(
   return [swingedDuration, makeBeatSwing] as [number, boolean];
 }
 
+/**
+ * Checks if values for options are valid and sets defaults.
+ */
+function normalizeOptions(options?: Options) {
+  options = Object.assign(
+    {
+      noswingColor: "#FF0000",
+      silenceColor: "#0000FF",
+    },
+    options || {}
+  );
+
+  for (const [option, value] of Object.entries(options)) {
+    switch (option) {
+      case "noswingColor":
+        options[option] = value.toUpperCase();
+        if (!options[option]!.match(/NONE|#[0-9A-F]{6}/)) {
+          throw new Error(
+            `Value for option ${option} must be a 6-digit hex color or 'NONE', but it is '${value}'`
+          );
+        }
+    }
+  }
+
+  return options;
+}
+
 export default function swingify(document: Document, options?: Options) {
+  options = normalizeOptions(options);
+
   for (const part of document.querySelectorAll("score-partwise > part")) {
     let divisions = undefined;
     for (const measure of part.querySelectorAll("measure")) {
