@@ -496,10 +496,10 @@ test("default silenceColor", () => {
   );
 
   expect(
-    [...document.querySelectorAll("duration")]
-      .map((e) => e.parentElement?.nodeName)
+    [...document.querySelectorAll("note")]
+      .map((note) => (note.querySelector("rest") ? "rest" : "note"))
       .join(" ")
-  ).toBe("forward note");
+  ).toBe("rest note");
 
   expect(
     [...document.querySelectorAll("duration")]
@@ -528,8 +528,34 @@ test("custom silenceColor", () => {
   );
 
   expect(
-    [...document.querySelectorAll("duration")]
-      .map((e) => e.parentElement?.nodeName)
+    [...document.querySelectorAll("note")]
+      .map((note) => (note.querySelector("rest") ? "rest" : "note"))
       .join(" ")
-  ).toBe("note forward");
+  ).toBe("note rest");
+});
+
+test("silence chords", () => {
+  const [document] = swingDocument(
+    `
+      <measure number="1">
+        <attributes>
+          <divisions>1</divisions>
+        </attributes>
+
+        <note color="#0000FF">
+          <duration>1</duration>
+        </note>
+        <note color="#0000FF">
+          <chord/>
+          <duration>1</duration>
+        </note>
+      </measure>
+    `
+  );
+
+  expect(
+    [...document.querySelectorAll("note")]
+      .map((note) => (note.querySelector("rest") ? "rest" : "note"))
+      .join(" ")
+  ).toBe("rest");
 });

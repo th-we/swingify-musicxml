@@ -8,6 +8,8 @@ enum Flag {
   NOSWING,
 }
 
+const validRestChildren = new Set(["duration", "notations", "type", "voice"]);
+
 function throwError(message: string, element: Element): never {
   const measure = element.closest("measure");
   const measureInfo = !measure
@@ -282,9 +284,15 @@ export default function swingify(document: Document, options?: Options) {
         durationElement.textContent = swingedDuration.toString();
 
         if (flag === Flag.SILENCE) {
-          const forward = note.ownerDocument.createElement("forward");
-          note.replaceWith(forward);
-          forward.appendChild(durationElement);
+          if (note.querySelector("chord")) {
+            note.parentElement!.removeChild(note);
+          } else {
+            [...note.childNodes]
+              .filter((child) => !validRestChildren.has(child.nodeName))
+              .forEach((child) => child.parentElement!.removeChild(child));
+            const rest = note.ownerDocument.createElement("rest");
+            note.insertAdjacentElement("afterbegin", rest);
+          }
         }
       }
 
