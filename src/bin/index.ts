@@ -8,7 +8,7 @@ let options;
 let musicxmlPath = "";
 
 new Command()
-  .name("singify-musicxml")
+  .name("swingify-musicxml")
   .option(
     "--skipColor <string>",
     "A hex color string, or 'NONE'. Groups of notes will not be swingified if a note(head) on the beat matches this color. If 'NONE' is set, all groups will be swingified, if possible. Default is '#FF0000' (red)."
